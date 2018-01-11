@@ -22,17 +22,17 @@ typedef struct {
 
 
 typedef struct {
-    ngx_int_t   (*preconfiguration)(ngx_conf_t *cf);
-    ngx_int_t   (*postconfiguration)(ngx_conf_t *cf);
+    ngx_int_t   (*preconfiguration)(ngx_conf_t *cf);		/* 在创建和读取该模块的配置信息之前被调用 */
+    ngx_int_t   (*postconfiguration)(ngx_conf_t *cf);		/* 在创建和读取该模块的配置信息之后被调用 */
 
-    void       *(*create_main_conf)(ngx_conf_t *cf);
-    char       *(*init_main_conf)(ngx_conf_t *cf, void *conf);
+    void       *(*create_main_conf)(ngx_conf_t *cf);		/* 调用该函数创建本模块位于http block的配置信息存储结构 */
+    char       *(*init_main_conf)(ngx_conf_t *cf, void *conf);	/* 调用该函数初始化本模块位于http block的配置信息存储结构 */
 
-    void       *(*create_srv_conf)(ngx_conf_t *cf);
-    char       *(*merge_srv_conf)(ngx_conf_t *cf, void *prev, void *conf);
+    void       *(*create_srv_conf)(ngx_conf_t *cf);			/* 创建本模块位于http server        block的配置信息存储结构*/
+    char       *(*merge_srv_conf)(ngx_conf_t *cf, void *prev, void *conf);	/* 若http block中配置与server block中配置信息发生冲突时，需要调用该函数进行合并      */
 
-    void       *(*create_loc_conf)(ngx_conf_t *cf);
-    char       *(*merge_loc_conf)(ngx_conf_t *cf, void *prev, void *conf);
+    void       *(*create_loc_conf)(ngx_conf_t *cf);			/* 调用该函数创建本模块位于location block的配置信息存储结构 */
+    char       *(*merge_loc_conf)(ngx_conf_t *cf, void *prev, void *conf);	/* 与merge_srv_conf类似，也是进行配置值合并的地方 */
 } ngx_http_module_t;
 
 

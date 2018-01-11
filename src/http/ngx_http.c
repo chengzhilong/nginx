@@ -69,6 +69,7 @@ static ngx_int_t ngx_http_add_addrs6(ngx_conf_t *cf, ngx_http_port_t *hport,
 ngx_uint_t   ngx_http_max_module;
 
 
+/* 过滤头部和主体的函数。所有模块的响应内容要返回给客户端，都必须要调用如下两个接口: ngx_http_top_header_filter和ngx_http_top_body_filter */
 ngx_http_output_header_filter_pt  ngx_http_top_header_filter;
 ngx_http_output_body_filter_pt    ngx_http_top_body_filter;
 ngx_http_request_body_filter_pt   ngx_http_top_request_body_filter;

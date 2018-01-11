@@ -9,6 +9,8 @@
 #include <ngx_core.h>
 
 
+/* 在hash里面查找key对应的value。实际上这里的key是对真正key(也就是name)计算出的hash值，len是name长度
+ */
 void *
 ngx_hash_find(ngx_hash_t *hash, ngx_uint_t key, u_char *name, size_t len)
 {
@@ -49,6 +51,11 @@ ngx_hash_find(ngx_hash_t *hash, ngx_uint_t key, u_char *name, size_t len)
 }
 
 
+/* 
+ * @param(hwc): hash表对象的指针
+ * @param(name): 需要查询的域名，如www.abc.com
+ * @param(len): name的长度
+ */
 void *
 ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
 {
@@ -143,6 +150,11 @@ ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
 }
 
 
+/* 该函数查询包含通配符在前的key的hash表
+ * @param(hwc): hash表对象的指针
+ * @param(name): 需要查询的域名，如www.abc.com
+ * @param(len): name的长度
+ */
 void *
 ngx_hash_find_wc_tail(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
 {
@@ -207,6 +219,12 @@ ngx_hash_find_wc_tail(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
 }
 
 
+/* 该函数在此组合hash表中，依次查询其三个子hash表，看是否匹配，一旦找到，立即返回查找结果；若有多个可能匹配，只返回第一个匹配结果
+ * @param(hash): 此组合hash表对象
+ * @param(key): 根据name计算出的hash值
+ * @param(name): key的具体内容
+ * @param(len): name的长度
+ */
 void *
 ngx_hash_find_combined(ngx_hash_combined_t *hash, ngx_uint_t key, u_char *name,
     size_t len)
@@ -248,6 +266,11 @@ ngx_hash_find_combined(ngx_hash_combined_t *hash, ngx_uint_t key, u_char *name,
 #define NGX_HASH_ELT_SIZE(name)                                               \
     (sizeof(void *) + ngx_align((name)->key.len + 2, sizeof(void *)))
 
+/* 该函数查询包含通配符在末尾的key的hash表
+ * @param(hinit): 初始化的一些参数的一个集合
+ * @param(names): 初始化一个ngx_hash_t所需要的所有key的一个数组
+ * @param(nelts): key的个数
+ */
 ngx_int_t
 ngx_hash_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names, ngx_uint_t nelts)
 {
@@ -461,6 +484,11 @@ found:
 }
 
 
+/* 
+ * @param(hinit): 构造一个通配符hash表的一些参数的一个集合
+ * @param(names): 构造此hash表的所有的通配符key的数组(names数组中元素的value低两位bit必须为0，否则hash表查询不出正确结果)
+ * @param(nelts): names数组元素的个数
+ */
 ngx_int_t
 ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
     ngx_uint_t nelts)
@@ -654,6 +682,11 @@ ngx_hash_strlow(u_char *dst, u_char *src, size_t n)
 }
 
 
+/* 初始化这个结构，主要是对这个结构中的ngx_array_t类型的字段进行初始化
+ * @param(ha): 该结构的对象指针
+ * @param(type): 该字段有2个值可选择，即NGX_HASH_SMALL和NGX_HASH_LARGE。用来指明将要建立的hash表的类型，若是
+ * NGX_HASH_SMALL,则有比较小的桶的个数和数组元素大小，NGX_HASH_LARGE则相反
+ */
 ngx_int_t
 ngx_hash_keys_array_init(ngx_hash_keys_arrays_t *ha, ngx_uint_t type)
 {
@@ -709,6 +742,11 @@ ngx_hash_keys_array_init(ngx_hash_keys_arrays_t *ha, ngx_uint_t type)
 }
 
 
+/* 一般是循环调用这个函数，把一组键值对加入到这个结构体中，返回NGX_BUSY意味着key值重复
+ * param(flags): 有两个标志位可设置，NGX_HASH_WILDCARD_KEY和NGX_HASH_READONLY_KEY。NGX_HASH_READONLY_KEY被
+ * 设置的时候，在计算hash值的时候，key的值不会被转为小写字符，否则会。NGX_HASH_WILDCARD_KEY被设置的时候，
+ * 说明key里面可能包含通配符，会进行相应的处理。
+ */
 ngx_int_t
 ngx_hash_add_key(ngx_hash_keys_arrays_t *ha, ngx_str_t *key, void *value,
     ngx_uint_t flags)

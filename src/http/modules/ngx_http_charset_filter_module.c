@@ -1675,8 +1675,11 @@ ngx_http_charset_postconfiguration(ngx_conf_t *cf)
         dst[tables[t].src] = tables[t].dst2src;
     }
 
-    ngx_http_next_header_filter = ngx_http_top_header_filter;
-    ngx_http_top_header_filter = ngx_http_charset_header_filter;
+	/* 每个模块想执行下一个过滤函数，只要调用ngx_http_next_header_filter这个局部变量。而整个过滤模块链的入口，需要调用
+	 * ngx_http_top_header_filter这个全局变量。ngx_http_top_body_filter的行为与header filter类似
+	 */
+    ngx_http_next_header_filter = ngx_http_top_header_filter;			/* 局部全局变量，保存了编译前上一个filter模块的处理函数 */
+    ngx_http_top_header_filter = ngx_http_charset_header_filter;		/* 当编译进一个filter模块时，被赋值为当前filter模块的处理函数 */
 
     ngx_http_next_body_filter = ngx_http_top_body_filter;
     ngx_http_top_body_filter = ngx_http_charset_body_filter;

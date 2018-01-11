@@ -75,12 +75,12 @@
 
 
 struct ngx_command_s {
-    ngx_str_t             name;
-    ngx_uint_t            type;
-    char               *(*set)(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-    ngx_uint_t            conf;
-    ngx_uint_t            offset;
-    void                 *post;
+    ngx_str_t             name;							/* 配置指令的名称 */
+    ngx_uint_t            type;							/* 配置指令属性的集合 */
+    char               *(*set)(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);	/* nginx在解析配置时，  若遇到配置之类，会把读取到的值传递给这个函数进行分解处理 */
+    ngx_uint_t            conf;							/* 被NGX_HTTP_MODULE类型模块所用，指定当前配置项存储的内存位置，取值为NGX_HTTP_MAIN_CONF_OFFSET, NGX_HTTP_SRV_CONF_OFFSET, NGX_HTTP_LOC_CONF_OFFSET */
+    ngx_uint_t            offset;						/* 指定该配置项值的精确存放位置，一般指定为某一个结构体变量的字段偏移 */
+    void                 *post;							/* 该字段存储一个指针，可指向任何一个在读取配置过程中需要的数据，以便于进行配置读取的处理 */
 };
 
 #define ngx_null_command  { ngx_null_string, 0, NULL, 0, 0, NULL }
@@ -114,21 +114,21 @@ typedef char *(*ngx_conf_handler_pt)(ngx_conf_t *cf,
 
 
 struct ngx_conf_s {
-    char                 *name;
-    ngx_array_t          *args;
+    char                 *name;					/* 存放当前解析到的指令 */
+    ngx_array_t          *args;					/* 存放包含该指令的所有参数 */
 
     ngx_cycle_t          *cycle;
-    ngx_pool_t           *pool;
-    ngx_pool_t           *temp_pool;
-    ngx_conf_file_t      *conf_file;
+    ngx_pool_t           *pool;					/* 内存池 */
+    ngx_pool_t           *temp_pool;			/* 用于存放解析配置文件的临时内存池，解析后会释放 */
+    ngx_conf_file_t      *conf_file;			/* ngx_conf_file_t结构体的指针 */
     ngx_log_t            *log;
 
-    void                 *ctx;
-    ngx_uint_t            module_type;
-    ngx_uint_t            cmd_type;
+    void                 *ctx;					/* 描述指令的上下文 */
+    ngx_uint_t            module_type;			/* 支持指令的模块类型 */
+    ngx_uint_t            cmd_type;				/* 指令的类型 */
 
-    ngx_conf_handler_pt   handler;
-    char                 *handler_conf;
+    ngx_conf_handler_pt   handler;				/* 指令自定义的处理函数 */
+    char                 *handler_conf;			/* 自定义处理函数需要的相关配置 */
 };
 
 

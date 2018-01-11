@@ -239,7 +239,8 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
 
     delta = ngx_current_msec;
 
-    (void) ngx_process_events(cycle, timer, flags);
+	/* 监听事件(一般情况下是对应ngx_epoll_process_events()函数)*/
+    (void) ngx_process_events(cycle, timer, flags);			/* 负责把事件投递到ngx_posted_events事件队列里, 并在ngx_event_process_posted()函数中进行处理*/
 
     delta = ngx_current_msec - delta;
 
@@ -680,6 +681,9 @@ ngx_event_process_init(ngx_cycle_t *cycle)
 
 #endif
 
+	/* 为cycle成员connections, read_events, write_events各分配了connection_n(来自配置文件nginx.conf)个相应的内存空间。
+	 * connections成员的结构体为ngx_connection_n，而read_events成员和write_events结构体均为ngx_event_n。
+	 */
     cycle->connections =
         ngx_alloc(sizeof(ngx_connection_t) * cycle->connection_n, cycle->log);
     if (cycle->connections == NULL) {
@@ -718,7 +722,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         i--;
 
         c[i].data = next;
-        c[i].read = &cycle->read_events[i];
+        c[i].read = &cycle->read_events[i];				/* ngx_connection_t结构体的read, write成员各自关联read_events和write_events*/
         c[i].write = &cycle->write_events[i];
         c[i].fd = (ngx_socket_t) -1;
 

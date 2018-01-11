@@ -28,11 +28,14 @@ typedef struct {
 
 
 struct ngx_event_s {
+	/* 事件相关对象，通常data指向ngx_connection_t连接对象。
+ 	 * 开启异步IO后可能指向ngx_event_aio_t结构体。
+ 	 */
     void            *data;
 
     unsigned         write:1;
 
-    unsigned         accept:1;
+    unsigned         accept:1;			/* 标示是否可以建立连接 */
 
     /* used to detect the stale events in kqueue and epoll */
     unsigned         instance:1;
@@ -41,7 +44,7 @@ struct ngx_event_s {
      * the event was passed or would be passed to a kernel;
      * in aio mode - operation was posted.
      */
-    unsigned         active:1;
+    unsigned         active:1;			/* 标示是否是活动状态 */
 
     unsigned         disabled:1;
 
@@ -51,7 +54,7 @@ struct ngx_event_s {
     unsigned         oneshot:1;
 
     /* aio operation is complete */
-    unsigned         complete:1;
+    unsigned         complete:1;		/* AIO模式下标示事件是否处理完成 */
 
     unsigned         eof:1;
     unsigned         error:1;

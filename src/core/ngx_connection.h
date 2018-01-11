@@ -119,30 +119,36 @@ typedef enum {
 
 
 struct ngx_connection_s {
+	/* 连接未使用时，data用于充当连接池中空闲链表中的next指针。
+	 * 连接使用时由模块而定，HTTP中，data指向ngx_http_request_t
+	 */
     void               *data;
-    ngx_event_t        *read;
-    ngx_event_t        *write;
+    ngx_event_t        *read;			/* 连接对应的读事件 */
+    ngx_event_t        *write;			/* 连接对应的写事件 */
 
-    ngx_socket_t        fd;
+    ngx_socket_t        fd;				/* 套接字对应的句柄 */
 
-    ngx_recv_pt         recv;
-    ngx_send_pt         send;
-    ngx_recv_chain_pt   recv_chain;
-    ngx_send_chain_pt   send_chain;
+    ngx_recv_pt         recv;			/* 直接接收网络字符流的方法 */
+    ngx_send_pt         send;			/* 直接发送网络字符流的方法 */
+    ngx_recv_chain_pt   recv_chain;		/* 以链表来接收网络字符流的方法 */
+    ngx_send_chain_pt   send_chain;		/* 以链表来发送网络字符流的方法 */
 
-    ngx_listening_t    *listening;
+    ngx_listening_t    *listening;		/* 对应ngx_listening_t监听对象，此连接由listening监听端口的事件建立 */
 
-    off_t               sent;
+    off_t               sent;			/* 这个连接上已发送的字节数 */
 
-    ngx_log_t          *log;
+    ngx_log_t          *log;			/* 日志对象 */
 
+	/* 内存池。一般在accept一个新的连接时，会创建一个内存池，而在这个连接结束
+	 * 时会销毁内存池。内存池大小是由上面listening成员的pool_size决定的。
+	 */
     ngx_pool_t         *pool;
 
     int                 type;
 
-    struct sockaddr    *sockaddr;
-    socklen_t           socklen;
-    ngx_str_t           addr_text;
+    struct sockaddr    *sockaddr;		/* 连接客户端的sockaddr */
+    socklen_t           socklen;		/* sockaddr结构体的长度 */
+    ngx_str_t           addr_text;		/* 连接客户端字符串形成的IP地址 */
 
     ngx_str_t           proxy_protocol_addr;
     in_port_t           proxy_protocol_port;
@@ -151,32 +157,45 @@ struct ngx_connection_s {
     ngx_ssl_connection_t  *ssl;
 #endif
 
+	/* 本机监听端口对应的sockaddr结构体，实际上就是listening监听对象的sockaddr成员 */
     struct sockaddr    *local_sockaddr;
     socklen_t           local_socklen;
 
+	/* 用户接受、缓存客户端发来的字符流，buffer是由连接内存池分配的，大小自由决定。
+	 * 用来将当前连接以双向链表元素的形式添加到ngx_cycle_t核心结构体的reuseable_connection_queue
+	 * 双向链表中，表示可以重用的连接。
+	 */
     ngx_buf_t          *buffer;
 
     ngx_queue_t         queue;
 
+	/* 连接使用次数。ngx_connection_t结构体每次建立一条来自客户端的连接，或者主动向后端服务器
+	 * 发起连接时，number都会加1
+	 */
     ngx_atomic_uint_t   number;
 
-    ngx_uint_t          requests;
+    ngx_uint_t          requests;		/* 处理的请求次数 */
 
-    unsigned            buffered:8;
+    unsigned            buffered:8;		/* 缓存中的业务类型 */
 
+	/* 本连接的日志级别 */
     unsigned            log_error:3;     /* ngx_connection_log_error_e */
 
-    unsigned            timedout:1;
-    unsigned            error:1;
-    unsigned            destroyed:1;
+    unsigned            timedout:1;		/* 为1表示连接已超时 */
+    unsigned            error:1;		/* 为1表示连接处理过程中出现错误 */
+    unsigned            destroyed:1;	/* 为1表示连接已经销毁 */
 
-    unsigned            idle:1;
-    unsigned            reusable:1;
-    unsigned            close:1;
+    unsigned            idle:1;			/* 为1表示连接处于空闲状态，如keepalive两次请求中间的状态 */
+    unsigned            reusable:1;		/* 为1表示连接可重用，与上面的queue字段对应使用 */
+    unsigned            close:1;		/* 为1表示连接关闭 */
     unsigned            shared:1;
 
-    unsigned            sendfile:1;
-    unsigned            sndlowat:1;
+    unsigned            sendfile:1;		/* 为1表示正在将文件中的数据发往连接的另一端 */
+	/* 为1表示只有连接套接字对应的发送缓冲区必须满足最低设置的大小阈值时，
+	 * 事件驱动模块才会分发该事件。这与ngx_handle_write_event方法中的lowat
+	 * 参数是对应的。
+	 */
+    unsigned            sndlowat:1;	
     unsigned            tcp_nodelay:2;   /* ngx_connection_tcp_nodelay_e */
     unsigned            tcp_nopush:2;    /* ngx_connection_tcp_nopush_e */
 

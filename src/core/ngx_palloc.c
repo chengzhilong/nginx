@@ -15,6 +15,10 @@ static void *ngx_palloc_block(ngx_pool_t *pool, size_t size);
 static void *ngx_palloc_large(ngx_pool_t *pool, size_t size);
 
 
+/* Create a node, while size is @param(size) 
+ * @param(size): sizeof(ngx_pool_t) < size <= NGX_MAX_ALLOC_FROM_POOL
+ * @param(log): 后续在该pool上进行操作时输出日志的对象
+ */
 ngx_pool_t *
 ngx_create_pool(size_t size, ngx_log_t *log)
 {
@@ -43,6 +47,9 @@ ngx_create_pool(size_t size, ngx_log_t *log)
 }
 
 
+/* 释放pool中持有的所有内存，以及依次调用cleanup字段所管理的链表中每个元素的handler字段所指向的函数，
+ * 来释放所有该pool管理的资源。并且把pool指向的ngx_pool_t 也释放掉了，完全不可用了。
+ */
 void
 ngx_destroy_pool(ngx_pool_t *pool)
 {
@@ -96,6 +103,9 @@ ngx_destroy_pool(ngx_pool_t *pool)
 }
 
 
+/* 释放pool中所有大块内存链表上的内存，小块内存链上的内存块都修改为可用。
+ * 但是不会去处理cleanup链表上的项目。
+ */
 void
 ngx_reset_pool(ngx_pool_t *pool)
 {
@@ -249,6 +259,9 @@ ngx_palloc_large(ngx_pool_t *pool, size_t size)
 }
 
 
+/* 按照指定对齐大小alignment来申请一块大小为size的内存，
+ * 此处获取的内存不管大小都将被置于大内存块链中管理
+ */
 void *
 ngx_pmemalign(ngx_pool_t *pool, size_t size, size_t alignment)
 {
@@ -274,6 +287,10 @@ ngx_pmemalign(ngx_pool_t *pool, size_t size, size_t alignment)
 }
 
 
+/* 1.对于被置于大块内存链，也就是被large字段管理的一列内存中的某块进行释放。
+ * 2.该函数的实现是顺序遍历large管理的大块内存链表，所以效率低下。
+ * 3.因此，除非必要，也就是这块内存非常大，确应及时释放，否则一般不需要调用
+ */
 ngx_int_t
 ngx_pfree(ngx_pool_t *pool, void *p)
 {
@@ -301,13 +318,15 @@ ngx_pcalloc(ngx_pool_t *pool, size_t size)
 
     p = ngx_palloc(pool, size);
     if (p) {
-        ngx_memzero(p, size);
+        ngx_memzero(p, size);			/* initialize memory block to zero. */
     }
 
     return p;
 }
 
-
+/* 该函数为p->cleanup->data分配size大小的空间
+ * @param(size): save sizeof(p->cleanup->data)
+ */
 ngx_pool_cleanup_t *
 ngx_pool_cleanup_add(ngx_pool_t *p, size_t size)
 {

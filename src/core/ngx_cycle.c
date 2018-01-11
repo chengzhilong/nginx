@@ -54,14 +54,14 @@ ngx_init_cycle(ngx_cycle_t *old_cycle)
     ngx_core_module_t   *module;
     char                 hostname[NGX_MAXHOSTNAMELEN];
 
-    ngx_timezone_update();
+    ngx_timezone_update();						/* 更新时区 */
 
     /* force localtime update with a new timezone */
 
     tp = ngx_timeofday();
     tp->sec = 0;
 
-    ngx_time_update();
+    ngx_time_update();							/* 更新时间 */
 
 
     log = old_cycle->log;

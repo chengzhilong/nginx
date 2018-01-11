@@ -19,20 +19,24 @@ typedef pid_t       ngx_pid_t;
 
 typedef void (*ngx_spawn_proc_pt) (ngx_cycle_t *cycle, void *data);
 
+/* master每创建一个worker都会把一个设置好的ngx_process_t结构变量放入ngx_processes中，进程表
+ * 长度为1024，刚创建的进程存放在ngx_process_slot位置，ngx_last_process是进程表中最后一个存
+ * 量进程的下一个位置，ngx_process_t是进程在nginx中的抽象。
+ */
 typedef struct {
-    ngx_pid_t           pid;
-    int                 status;
-    ngx_socket_t        channel[2];
+    ngx_pid_t           pid;				/* 进程ID */
+    int                 status;				/* 进程状态 */
+    ngx_socket_t        channel[2];			/* socketpair创建的socket句柄 */
 
-    ngx_spawn_proc_pt   proc;
-    void               *data;
-    char               *name;
+    ngx_spawn_proc_pt   proc;				/* 进程执行函数 */
+    void               *data;				/* 执行函数的参数 */
+    char               *name;				/* 名称 */
 
-    unsigned            respawn:1;
-    unsigned            just_spawn:1;
-    unsigned            detached:1;
-    unsigned            exiting:1;
-    unsigned            exited:1;
+    unsigned            respawn:1;			/* 重新创建 */
+    unsigned            just_spawn:1;		/* 第一次创建的 */
+    unsigned            detached:1;			/* 分离的 */
+    unsigned            exiting:1;			/* 正在退出的 */
+    unsigned            exited:1;			/* 退出过的 */
 } ngx_process_t;
 
 
