@@ -35,54 +35,54 @@ struct ngx_shm_zone_s {
 };
 
 
-/* ngx_cycle_t½á¹¹ÌåÖĞ°üº¬Á½²¿·ÖĞÅÏ¢£ºËùÓĞÄ£¿éµÄÅäÖÃĞÅÏ¢£¬nginxÔËĞĞÊ±
- * ËùĞèÒªµÄÒ»Ğ©×ÊÔ´ÈçÁ¬½Ó³Ø¡¢ÄÚ´æ³Ø¡¢´ò¿ªÎÄ¼ş¡¢²Ù×÷Ä¿Â¼µÈµÈ 
+/* ngx_cycle_tç»“æ„ä½“ä¸­åŒ…å«ä¸¤éƒ¨åˆ†ä¿¡æ¯ï¼šæ‰€æœ‰æ¨¡å—çš„é…ç½®ä¿¡æ¯ï¼Œnginxè¿è¡Œæ—¶
+ * æ‰€éœ€è¦çš„ä¸€äº›èµ„æºå¦‚è¿æ¥æ± ã€å†…å­˜æ± ã€æ‰“å¼€æ–‡ä»¶ã€æ“ä½œç›®å½•ç­‰ç­‰ 
  */
 struct ngx_cycle_s {
-    void                  ****conf_ctx;		/* ÅäÖÃÉÏÏÂÎÄÊı×é(º¬ËùÓĞÄ£¿é) */
-    ngx_pool_t               *pool;			/* ÄÚ´æ³Ø */
+    void                  ****conf_ctx;		/* é…ç½®ä¸Šä¸‹æ–‡æ•°ç»„(å«æ‰€æœ‰æ¨¡å—) */
+    ngx_pool_t               *pool;			/* å†…å­˜æ±  */
 
-    ngx_log_t                *log;			/* ÈÕÖ¾ */
+    ngx_log_t                *log;			/* æ—¥å¿— */
     ngx_log_t                 new_log;
 
     ngx_uint_t                log_use_stderr;  /* unsigned  log_use_stderr:1; */
 
-    ngx_connection_t        **files;		/* Á¬½ÓÎÄ¼ş: files[ngx_socket_t s] = ngx_connection_t c*/
-    ngx_connection_t         *free_connections;		/* ¿ÕÏĞÁ¬½Ó */
-    ngx_uint_t                free_connection_n;	/* ¿ÕÏĞÁ¬½Ó¸öÊı */
+    ngx_connection_t        **files;		/* è¿æ¥æ–‡ä»¶: files[ngx_socket_t s] = ngx_connection_t c*/
+    ngx_connection_t         *free_connections;		/* ç©ºé—²è¿æ¥ */
+    ngx_uint_t                free_connection_n;	/* ç©ºé—²è¿æ¥ä¸ªæ•° */
 
     ngx_module_t            **modules;
     ngx_uint_t                modules_n;
     ngx_uint_t                modules_used;    /* unsigned  modules_used:1; */
 
-    ngx_queue_t               reusable_connections_queue;	/* ÔÙÀûÓÃÁ¬½Ó¶ÓÁĞ */
+    ngx_queue_t               reusable_connections_queue;	/* å†åˆ©ç”¨è¿æ¥é˜Ÿåˆ— */
     ngx_uint_t                reusable_connections_n;
 
-    ngx_array_t               listening;			/* ¼àÌıÊı×é */
-    ngx_array_t               paths;				/* Â·¾¶Êı×é */
+    ngx_array_t               listening;			/* ç›‘å¬æ•°ç»„ */
+    ngx_array_t               paths;				/* è·¯å¾„æ•°ç»„ */
 
     ngx_array_t               config_dump;
     ngx_rbtree_t              config_dump_rbtree;
     ngx_rbtree_node_t         config_dump_sentinel;
 
-    ngx_list_t                open_files;			/* ´ò¿ªÎÄ¼şÁ´±í */
-    ngx_list_t                shared_memory;		/* ¹²ÏíÄÚ´æÁ´±í */
+    ngx_list_t                open_files;			/* æ‰“å¼€æ–‡ä»¶é“¾è¡¨ */
+    ngx_list_t                shared_memory;		/* å…±äº«å†…å­˜é“¾è¡¨ */
 
-    ngx_uint_t                connection_n;			/* Á¬½Ó¸öÊı */
-    ngx_uint_t                files_n;				/* ´ò¿ªÎÄ¼ş¸öÊı */
+    ngx_uint_t                connection_n;			/* è¿æ¥ä¸ªæ•° */
+    ngx_uint_t                files_n;				/* æ‰“å¼€æ–‡ä»¶ä¸ªæ•° */
 
-    ngx_connection_t         *connections;			/* Á¬½Ó */
-    ngx_event_t              *read_events;			/* ¶ÁÊÂ¼ş */
-    ngx_event_t              *write_events;			/* Ğ´ÊÂ¼ş */
+    ngx_connection_t         *connections;			/* è¿æ¥ */
+    ngx_event_t              *read_events;			/* è¯»äº‹ä»¶ */
+    ngx_event_t              *write_events;			/* å†™äº‹ä»¶ */
 
-    ngx_cycle_t              *old_cycle;			/* old cycleÖ¸Õë */
+    ngx_cycle_t              *old_cycle;			/* old cycleæŒ‡é’ˆ */
 
-    ngx_str_t                 conf_file;			/* ÅäÖÃÎÄ¼ş */
-    ngx_str_t                 conf_param;			/* ÅäÖÃ²ÎÊı */
-    ngx_str_t                 conf_prefix;			/* ÅäÖÃÇ°×º */
-    ngx_str_t                 prefix;				/* Ç°×º */
-    ngx_str_t                 lock_file;			/* ËøÎÄ¼ş */
-    ngx_str_t                 hostname;				/* Ö÷»úÃû */
+    ngx_str_t                 conf_file;			/* é…ç½®æ–‡ä»¶ */
+    ngx_str_t                 conf_param;			/* é…ç½®å‚æ•° */
+    ngx_str_t                 conf_prefix;			/* é…ç½®å‰ç¼€ */
+    ngx_str_t                 prefix;				/* å‰ç¼€ */
+    ngx_str_t                 lock_file;			/* é”æ–‡ä»¶ */
+    ngx_str_t                 hostname;				/* ä¸»æœºå */
 };
 
 

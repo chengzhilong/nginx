@@ -119,36 +119,36 @@ typedef enum {
 
 
 struct ngx_connection_s {
-	/* Á¬½ÓÎ´Ê¹ÓÃÊ±£¬dataÓÃÓÚ³äµ±Á¬½Ó³ØÖĞ¿ÕÏĞÁ´±íÖĞµÄnextÖ¸Õë¡£
-	 * Á¬½ÓÊ¹ÓÃÊ±ÓÉÄ£¿é¶ø¶¨£¬HTTPÖĞ£¬dataÖ¸Ïòngx_http_request_t
+	/* è¿æ¥æœªä½¿ç”¨æ—¶ï¼Œdataç”¨äºå……å½“è¿æ¥æ± ä¸­ç©ºé—²é“¾è¡¨ä¸­çš„nextæŒ‡é’ˆã€‚
+	 * è¿æ¥ä½¿ç”¨æ—¶ç”±æ¨¡å—è€Œå®šï¼ŒHTTPä¸­ï¼ŒdataæŒ‡å‘ngx_http_request_t
 	 */
     void               *data;
-    ngx_event_t        *read;			/* Á¬½Ó¶ÔÓ¦µÄ¶ÁÊÂ¼ş */
-    ngx_event_t        *write;			/* Á¬½Ó¶ÔÓ¦µÄĞ´ÊÂ¼ş */
+    ngx_event_t        *read;			/* è¿æ¥å¯¹åº”çš„è¯»äº‹ä»¶ */
+    ngx_event_t        *write;			/* è¿æ¥å¯¹åº”çš„å†™äº‹ä»¶ */
 
-    ngx_socket_t        fd;				/* Ì×½Ó×Ö¶ÔÓ¦µÄ¾ä±ú */
+    ngx_socket_t        fd;				/* å¥—æ¥å­—å¯¹åº”çš„å¥æŸ„ */
 
-    ngx_recv_pt         recv;			/* Ö±½Ó½ÓÊÕÍøÂç×Ö·ûÁ÷µÄ·½·¨ */
-    ngx_send_pt         send;			/* Ö±½Ó·¢ËÍÍøÂç×Ö·ûÁ÷µÄ·½·¨ */
-    ngx_recv_chain_pt   recv_chain;		/* ÒÔÁ´±íÀ´½ÓÊÕÍøÂç×Ö·ûÁ÷µÄ·½·¨ */
-    ngx_send_chain_pt   send_chain;		/* ÒÔÁ´±íÀ´·¢ËÍÍøÂç×Ö·ûÁ÷µÄ·½·¨ */
+    ngx_recv_pt         recv;			/* ç›´æ¥æ¥æ”¶ç½‘ç»œå­—ç¬¦æµçš„æ–¹æ³• */
+    ngx_send_pt         send;			/* ç›´æ¥å‘é€ç½‘ç»œå­—ç¬¦æµçš„æ–¹æ³• */
+    ngx_recv_chain_pt   recv_chain;		/* ä»¥é“¾è¡¨æ¥æ¥æ”¶ç½‘ç»œå­—ç¬¦æµçš„æ–¹æ³• */
+    ngx_send_chain_pt   send_chain;		/* ä»¥é“¾è¡¨æ¥å‘é€ç½‘ç»œå­—ç¬¦æµçš„æ–¹æ³• */
 
-    ngx_listening_t    *listening;		/* ¶ÔÓ¦ngx_listening_t¼àÌı¶ÔÏó£¬´ËÁ¬½ÓÓÉlistening¼àÌı¶Ë¿ÚµÄÊÂ¼ş½¨Á¢ */
+    ngx_listening_t    *listening;		/* å¯¹åº”ngx_listening_tç›‘å¬å¯¹è±¡ï¼Œæ­¤è¿æ¥ç”±listeningç›‘å¬ç«¯å£çš„äº‹ä»¶å»ºç«‹ */
 
-    off_t               sent;			/* Õâ¸öÁ¬½ÓÉÏÒÑ·¢ËÍµÄ×Ö½ÚÊı */
+    off_t               sent;			/* è¿™ä¸ªè¿æ¥ä¸Šå·²å‘é€çš„å­—èŠ‚æ•° */
 
-    ngx_log_t          *log;			/* ÈÕÖ¾¶ÔÏó */
+    ngx_log_t          *log;			/* æ—¥å¿—å¯¹è±¡ */
 
-	/* ÄÚ´æ³Ø¡£Ò»°ãÔÚacceptÒ»¸öĞÂµÄÁ¬½ÓÊ±£¬»á´´½¨Ò»¸öÄÚ´æ³Ø£¬¶øÔÚÕâ¸öÁ¬½Ó½áÊø
-	 * Ê±»áÏú»ÙÄÚ´æ³Ø¡£ÄÚ´æ³Ø´óĞ¡ÊÇÓÉÉÏÃælistening³ÉÔ±µÄpool_size¾ö¶¨µÄ¡£
+	/* å†…å­˜æ± ã€‚ä¸€èˆ¬åœ¨acceptä¸€ä¸ªæ–°çš„è¿æ¥æ—¶ï¼Œä¼šåˆ›å»ºä¸€ä¸ªå†…å­˜æ± ï¼Œè€Œåœ¨è¿™ä¸ªè¿æ¥ç»“æŸ
+	 * æ—¶ä¼šé”€æ¯å†…å­˜æ± ã€‚å†…å­˜æ± å¤§å°æ˜¯ç”±ä¸Šé¢listeningæˆå‘˜çš„pool_sizeå†³å®šçš„ã€‚
 	 */
     ngx_pool_t         *pool;
 
     int                 type;
 
-    struct sockaddr    *sockaddr;		/* Á¬½Ó¿Í»§¶ËµÄsockaddr */
-    socklen_t           socklen;		/* sockaddr½á¹¹ÌåµÄ³¤¶È */
-    ngx_str_t           addr_text;		/* Á¬½Ó¿Í»§¶Ë×Ö·û´®ĞÎ³ÉµÄIPµØÖ· */
+    struct sockaddr    *sockaddr;		/* è¿æ¥å®¢æˆ·ç«¯çš„sockaddr */
+    socklen_t           socklen;		/* sockaddrç»“æ„ä½“çš„é•¿åº¦ */
+    ngx_str_t           addr_text;		/* è¿æ¥å®¢æˆ·ç«¯å­—ç¬¦ä¸²å½¢æˆçš„IPåœ°å€ */
 
     ngx_str_t           proxy_protocol_addr;
     in_port_t           proxy_protocol_port;
@@ -157,43 +157,43 @@ struct ngx_connection_s {
     ngx_ssl_connection_t  *ssl;
 #endif
 
-	/* ±¾»ú¼àÌı¶Ë¿Ú¶ÔÓ¦µÄsockaddr½á¹¹Ìå£¬Êµ¼ÊÉÏ¾ÍÊÇlistening¼àÌı¶ÔÏóµÄsockaddr³ÉÔ± */
+	/* æœ¬æœºç›‘å¬ç«¯å£å¯¹åº”çš„sockaddrç»“æ„ä½“ï¼Œå®é™…ä¸Šå°±æ˜¯listeningç›‘å¬å¯¹è±¡çš„sockaddræˆå‘˜ */
     struct sockaddr    *local_sockaddr;
     socklen_t           local_socklen;
 
-	/* ÓÃ»§½ÓÊÜ¡¢»º´æ¿Í»§¶Ë·¢À´µÄ×Ö·ûÁ÷£¬bufferÊÇÓÉÁ¬½ÓÄÚ´æ³Ø·ÖÅäµÄ£¬´óĞ¡×ÔÓÉ¾ö¶¨¡£
-	 * ÓÃÀ´½«µ±Ç°Á¬½ÓÒÔË«ÏòÁ´±íÔªËØµÄĞÎÊ½Ìí¼Óµ½ngx_cycle_tºËĞÄ½á¹¹ÌåµÄreuseable_connection_queue
-	 * Ë«ÏòÁ´±íÖĞ£¬±íÊ¾¿ÉÒÔÖØÓÃµÄÁ¬½Ó¡£
+	/* ç”¨æˆ·æ¥å—ã€ç¼“å­˜å®¢æˆ·ç«¯å‘æ¥çš„å­—ç¬¦æµï¼Œbufferæ˜¯ç”±è¿æ¥å†…å­˜æ± åˆ†é…çš„ï¼Œå¤§å°è‡ªç”±å†³å®šã€‚
+	 * ç”¨æ¥å°†å½“å‰è¿æ¥ä»¥åŒå‘é“¾è¡¨å…ƒç´ çš„å½¢å¼æ·»åŠ åˆ°ngx_cycle_tæ ¸å¿ƒç»“æ„ä½“çš„reuseable_connection_queue
+	 * åŒå‘é“¾è¡¨ä¸­ï¼Œè¡¨ç¤ºå¯ä»¥é‡ç”¨çš„è¿æ¥ã€‚
 	 */
     ngx_buf_t          *buffer;
 
     ngx_queue_t         queue;
 
-	/* Á¬½ÓÊ¹ÓÃ´ÎÊı¡£ngx_connection_t½á¹¹ÌåÃ¿´Î½¨Á¢Ò»ÌõÀ´×Ô¿Í»§¶ËµÄÁ¬½Ó£¬»òÕßÖ÷¶¯Ïòºó¶Ë·şÎñÆ÷
-	 * ·¢ÆğÁ¬½ÓÊ±£¬number¶¼»á¼Ó1
+	/* è¿æ¥ä½¿ç”¨æ¬¡æ•°ã€‚ngx_connection_tç»“æ„ä½“æ¯æ¬¡å»ºç«‹ä¸€æ¡æ¥è‡ªå®¢æˆ·ç«¯çš„è¿æ¥ï¼Œæˆ–è€…ä¸»åŠ¨å‘åç«¯æœåŠ¡å™¨
+	 * å‘èµ·è¿æ¥æ—¶ï¼Œnumberéƒ½ä¼šåŠ 1
 	 */
     ngx_atomic_uint_t   number;
 
-    ngx_uint_t          requests;		/* ´¦ÀíµÄÇëÇó´ÎÊı */
+    ngx_uint_t          requests;		/* å¤„ç†çš„è¯·æ±‚æ¬¡æ•° */
 
-    unsigned            buffered:8;		/* »º´æÖĞµÄÒµÎñÀàĞÍ */
+    unsigned            buffered:8;		/* ç¼“å­˜ä¸­çš„ä¸šåŠ¡ç±»å‹ */
 
-	/* ±¾Á¬½ÓµÄÈÕÖ¾¼¶±ğ */
+	/* æœ¬è¿æ¥çš„æ—¥å¿—çº§åˆ« */
     unsigned            log_error:3;     /* ngx_connection_log_error_e */
 
-    unsigned            timedout:1;		/* Îª1±íÊ¾Á¬½ÓÒÑ³¬Ê± */
-    unsigned            error:1;		/* Îª1±íÊ¾Á¬½Ó´¦Àí¹ı³ÌÖĞ³öÏÖ´íÎó */
-    unsigned            destroyed:1;	/* Îª1±íÊ¾Á¬½ÓÒÑ¾­Ïú»Ù */
+    unsigned            timedout:1;		/* ä¸º1è¡¨ç¤ºè¿æ¥å·²è¶…æ—¶ */
+    unsigned            error:1;		/* ä¸º1è¡¨ç¤ºè¿æ¥å¤„ç†è¿‡ç¨‹ä¸­å‡ºç°é”™è¯¯ */
+    unsigned            destroyed:1;	/* ä¸º1è¡¨ç¤ºè¿æ¥å·²ç»é”€æ¯ */
 
-    unsigned            idle:1;			/* Îª1±íÊ¾Á¬½Ó´¦ÓÚ¿ÕÏĞ×´Ì¬£¬ÈçkeepaliveÁ½´ÎÇëÇóÖĞ¼äµÄ×´Ì¬ */
-    unsigned            reusable:1;		/* Îª1±íÊ¾Á¬½Ó¿ÉÖØÓÃ£¬ÓëÉÏÃæµÄqueue×Ö¶Î¶ÔÓ¦Ê¹ÓÃ */
-    unsigned            close:1;		/* Îª1±íÊ¾Á¬½Ó¹Ø±Õ */
+    unsigned            idle:1;			/* ä¸º1è¡¨ç¤ºè¿æ¥å¤„äºç©ºé—²çŠ¶æ€ï¼Œå¦‚keepaliveä¸¤æ¬¡è¯·æ±‚ä¸­é—´çš„çŠ¶æ€ */
+    unsigned            reusable:1;		/* ä¸º1è¡¨ç¤ºè¿æ¥å¯é‡ç”¨ï¼Œä¸ä¸Šé¢çš„queueå­—æ®µå¯¹åº”ä½¿ç”¨ */
+    unsigned            close:1;		/* ä¸º1è¡¨ç¤ºè¿æ¥å…³é—­ */
     unsigned            shared:1;
 
-    unsigned            sendfile:1;		/* Îª1±íÊ¾ÕıÔÚ½«ÎÄ¼şÖĞµÄÊı¾İ·¢ÍùÁ¬½ÓµÄÁíÒ»¶Ë */
-	/* Îª1±íÊ¾Ö»ÓĞÁ¬½ÓÌ×½Ó×Ö¶ÔÓ¦µÄ·¢ËÍ»º³åÇø±ØĞëÂú×ã×îµÍÉèÖÃµÄ´óĞ¡ãĞÖµÊ±£¬
-	 * ÊÂ¼şÇı¶¯Ä£¿é²Å»á·Ö·¢¸ÃÊÂ¼ş¡£ÕâÓëngx_handle_write_event·½·¨ÖĞµÄlowat
-	 * ²ÎÊıÊÇ¶ÔÓ¦µÄ¡£
+    unsigned            sendfile:1;		/* ä¸º1è¡¨ç¤ºæ­£åœ¨å°†æ–‡ä»¶ä¸­çš„æ•°æ®å‘å¾€è¿æ¥çš„å¦ä¸€ç«¯ */
+	/* ä¸º1è¡¨ç¤ºåªæœ‰è¿æ¥å¥—æ¥å­—å¯¹åº”çš„å‘é€ç¼“å†²åŒºå¿…é¡»æ»¡è¶³æœ€ä½è®¾ç½®çš„å¤§å°é˜ˆå€¼æ—¶ï¼Œ
+	 * äº‹ä»¶é©±åŠ¨æ¨¡å—æ‰ä¼šåˆ†å‘è¯¥äº‹ä»¶ã€‚è¿™ä¸ngx_handle_write_eventæ–¹æ³•ä¸­çš„lowat
+	 * å‚æ•°æ˜¯å¯¹åº”çš„ã€‚
 	 */
     unsigned            sndlowat:1;	
     unsigned            tcp_nodelay:2;   /* ngx_connection_tcp_nodelay_e */

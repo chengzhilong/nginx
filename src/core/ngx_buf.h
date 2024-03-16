@@ -45,24 +45,25 @@ struct ngx_buf_s {
     /* the buf's content is mmap()ed and must not be changed */
     unsigned         mmap:1;		/* 为1时表示该buf所包含内容在内存中，是通过mmap从文件映射到内存中，这些内容不能被进行处理的filter进行变更 */
 
-    unsigned         recycled:1;			/* 可以回收的。也就是这个buf是可以被释放的，通常配合shadow字段一起使用 */
-    unsigned         in_file:1;				/* 为1时表面该buf所包含的内容是在文件中 */
-    unsigned         flush:1;				/* 遇到有flush字段被设置为1的buf的chain，则该chain的数据即便不是最后结束的数据，也会进行输出，不会受postpone_output配置限制，但会收到发送速率等其他条件限制 */
+    unsigned         recycled:1;		/* 可以回收的。也就是这个buf是可以被释放的，通常配合shadow字段一起使用 */
+    unsigned         in_file:1;			/* 为1时表面该buf所包含的内容是在文件中 */
+    unsigned         flush:1;			/* 遇到有flush字段被设置为1的buf的chain，则该chain的数据即便不是最后结束的数据，也会进行输出，不会受postpone_output配置限制，但会收到发送速率等其他条件限制 */
     unsigned         sync:1;
-    unsigned         last_buf:1;			/* 数据被以多个chain传递给了过滤器，此字段为1表明这是最后一个buf */
-    unsigned         last_in_chain:1;		/* 在当前的chain里面，此buf是最后一个。注意last_in_chain的buf不一定是last_buf，但last_buf的buf一定是last_in_chain的 */
+    unsigned         last_buf:1;		/* 数据被以多个chain传递给了过滤器，此字段为1表明这是最后一个buf */
+    unsigned         last_in_chain:1;	/* 在当前的chain里面，此buf是最后一个。注意last_in_chain的buf不一定是last_buf，但last_buf的buf一定是last_in_chain的 */
 
-    unsigned         last_shadow:1;			/* 在创建一个buf的shadow的时候，通常将新创建的一个buf的last_shadow置为1 */
-    unsigned         temp_file:1;			/* 由于收到内存使用的限制，有时一些buf内容需要被写到磁盘上临时文件中，这时就设置此标志 */
+    unsigned         last_shadow:1;		/* 在创建一个buf的shadow的时候，通常将新创建的一个buf的last_shadow置为1 */
+    unsigned         temp_file:1;		/* 由于收到内存使用的限制，有时一些buf内容需要被写到磁盘上临时文件中，这时就设置此标志 */
 
     /* STUB */ int   num;
 };
 
 
+/* ngx_chain_t是与ngx_buf_t配合使用的链表数据结构 */
 struct ngx_chain_s {
     ngx_buf_t    *buf;			/* 指向实际的数据 */
     ngx_chain_t  *next;
-};
+}; /* 在向用户发送HTTP包体时，要传入ngx_chain_t链表对象 */
 
 
 typedef struct {

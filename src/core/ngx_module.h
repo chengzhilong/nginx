@@ -218,7 +218,9 @@
 
 #define NGX_MODULE_V1_PADDING  0, 0, 0, 0, 0, 0, 0, 0
 
-
+/* 所有模块的通用接口：只定义了7个回调方法——init_master, init_module, init_process, init_thread,
+ * exit_thread, exit_process, exit_master.
+ */
 struct ngx_module_s {
     ngx_uint_t            ctx_index;
     ngx_uint_t            index;
@@ -231,9 +233,9 @@ struct ngx_module_s {
     ngx_uint_t            version;
     const char           *signature;
 
-    void                 *ctx;
+    void                 *ctx;          /* 可以指向任意数据，为模块提供了很大的灵活性。ctx一般用于在不同类型模块中一种类型模块所具备的通用性接口 */
     ngx_command_t        *commands;
-    ngx_uint_t            type;
+    ngx_uint_t            type;         /* 指明了Nginx允许在设计模块时定义模块类型这个概念 */
 
     ngx_int_t           (*init_master)(ngx_log_t *log);
 
@@ -256,11 +258,14 @@ struct ngx_module_s {
     uintptr_t             spare_hook7;
 };
 
-
+/* 核心模块接口，其模块类型为NGX_CORE_MODULE，
+ * 其作用是可以简化Nginx的设计，使得非模块化的框架代码只关注于如何调用核心模块。
+ * 而大部分Nginx模块都是非核心模块
+ */
 typedef struct {
     ngx_str_t             name;
-    void               *(*create_conf)(ngx_cycle_t *cycle);
-    char               *(*init_conf)(ngx_cycle_t *cycle, void *conf);
+    void               *(*create_conf)(ngx_cycle_t *cycle); /* 解析配置项前调用的方法，创建存储配置项的数据结构 */
+    char               *(*init_conf)(ngx_cycle_t *cycle, void *conf);   /* 解析配置项完成后，Nginx会调用init_conf方法 */
 } ngx_core_module_t;
 
 

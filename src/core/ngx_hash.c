@@ -27,7 +27,7 @@ ngx_hash_find(ngx_hash_t *hash, ngx_uint_t key, u_char *name, size_t len)
         return NULL;
     }
 
-    while (elt->value) {
+    while (elt->value) { /* elt->value为空，则表示该槽位空槽 */
         if (len != (size_t) elt->len) {
             goto next;
         }
@@ -57,7 +57,7 @@ ngx_hash_find(ngx_hash_t *hash, ngx_uint_t key, u_char *name, size_t len)
  * @param(len): name的长度
  */
 void *
-ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
+ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len) /* 将待查询name转换为前置散列表规则下的字符串再递归查询 */
 {
     void        *value;
     ngx_uint_t   i, n, key;
@@ -156,7 +156,7 @@ ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
  * @param(len): name的长度
  */
 void *
-ngx_hash_find_wc_tail(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
+ngx_hash_find_wc_tail(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)   /* 将待查询name转换为后置散列表规则下的字符串再递归查询 */
 {
     void        *value;
     ngx_uint_t   i, key;
@@ -635,7 +635,7 @@ ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
 
 
 ngx_uint_t
-ngx_hash_key(u_char *data, size_t len)
+ngx_hash_key(u_char *data, size_t len) /* 使用BKDR算法将任意长度的字符串映射为整型 */
 {
     ngx_uint_t  i, key;
 
@@ -650,7 +650,7 @@ ngx_hash_key(u_char *data, size_t len)
 
 
 ngx_uint_t
-ngx_hash_key_lc(u_char *data, size_t len)
+ngx_hash_key_lc(u_char *data, size_t len)   /* 字符串全小写后，再使用BKDR算法将任意长度的字符串映射为整型 */
 {
     ngx_uint_t  i, key;
 

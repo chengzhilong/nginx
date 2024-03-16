@@ -50,10 +50,10 @@ struct ngx_pool_large_s {
 
 
 typedef struct {
-    u_char               *last;
-    u_char               *end;
-    ngx_pool_t           *next;
-    ngx_uint_t            failed;
+    u_char               *last;     /* 当前内存池分配到末位地址，下一次分配从此处开始 */
+    u_char               *end;      /* 内存池结束位置 */
+    ngx_pool_t           *next;     /* 指向下一块内存 */
+    ngx_uint_t            failed;   /* 分配失败的次数 */
 } ngx_pool_data_t;
 
 
@@ -62,7 +62,7 @@ struct ngx_pool_s {
     size_t                max;
     ngx_pool_t           *current;
     ngx_chain_t          *chain;
-    ngx_pool_large_t     *large;
+    ngx_pool_large_t     *large;    /* 大块内存申请时使用 */
     ngx_pool_cleanup_t   *cleanup;	/* 正因为有该字段，ngx_pool_t不仅仅可以管理内存，也可以管理任何需要释放的资源，如关闭、删除文件等 */
     ngx_log_t            *log;
 };
