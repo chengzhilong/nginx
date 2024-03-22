@@ -26,6 +26,9 @@ static ngx_int_t ngx_http_request_body_chunked_filter(ngx_http_request_t *r,
     ngx_chain_t *in);
 
 
+/* 异步方法, 用于接收HTTP包体
+ * 当接收完所有的包体内容后, post_handler 回调方法才会被调用
+ */
 ngx_int_t
 ngx_http_read_client_request_body(ngx_http_request_t *r,
     ngx_http_client_body_handler_pt post_handler)

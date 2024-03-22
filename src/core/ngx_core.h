@@ -32,12 +32,12 @@ typedef void (*ngx_event_handler_pt)(ngx_event_t *ev);
 typedef void (*ngx_connection_handler_pt)(ngx_connection_t *c);
 
 
-#define  NGX_OK          0
-#define  NGX_ERROR      -1
+#define  NGX_OK          0  /* 表示成功。Nginx将会继续执行该请求的后续动作(如执行subrequest或撤销这个请求) */
+#define  NGX_ERROR      -1  /* 表示错误。这时会调用ngx_http_terminate_request终止请求。如果还有POST子请求，那么将会在执行完POST请求后再终止本次请求 */
 #define  NGX_AGAIN      -2
 #define  NGX_BUSY       -3
-#define  NGX_DONE       -4
-#define  NGX_DECLINED   -5
+#define  NGX_DONE       -4  /* 表示到此为止，同时HTTP框架将暂时不再继续执行这个请求的后续部分 */
+#define  NGX_DECLINED   -5  /* 继续在NGX_HTTP_CONTENT_PHASE阶段寻找下一个对于该请求感兴趣的HTTP模块来再次处理这个请求 */
 #define  NGX_ABORT      -6
 
 

@@ -37,7 +37,7 @@ typedef struct {
 
 
 typedef struct {
-    ngx_array_t                limits;
+    ngx_array_t                limits;      /* 该数组存放某一个location中所有定义的limit_conn，每个limit_conn对应数组某个元素 */
     ngx_uint_t                 log_level;
     ngx_uint_t                 status_code;
 } ngx_http_limit_conn_conf_t;
@@ -137,6 +137,11 @@ ngx_module_t  ngx_http_limit_conn_module = {
 };
 
 
+/*
+ * nginx并发限制处在HTTP的11个处理阶段的NGX_HTTP_PREACCESS_PHASE阶段,
+ * 并发限制模块为ngx_http_limit_conn_module,
+ * 处理函数是ngx_http_limit_conn_handler.
+ */
 static ngx_int_t
 ngx_http_limit_conn_handler(ngx_http_request_t *r)
 {
@@ -189,6 +194,7 @@ ngx_http_limit_conn_handler(ngx_http_request_t *r)
 
         node = ngx_http_limit_conn_lookup(ctx->rbtree, &key, hash);
 
+        /* 如果查找失败，表示没有找到合适的节点，则尝试去生成新的key值节点 */
         if (node == NULL) {
 
             n = offsetof(ngx_rbtree_node_t, color)
@@ -199,6 +205,9 @@ ngx_http_limit_conn_handler(ngx_http_request_t *r)
 
             if (node == NULL) {
                 ngx_shmtx_unlock(&shpool->mutex);
+                /* 如果共享内存区域被耗尽，生成失败，则调用ngx_http_limit_conn_cleanup_all
+                 * 把已匹配到的limit的conn计数恢复.
+                 */
                 ngx_http_limit_conn_cleanup_all(r->pool);
                 return lccf->status_code;
             }
@@ -210,12 +219,16 @@ ngx_http_limit_conn_handler(ngx_http_request_t *r)
             lc->conn = 1;
             ngx_memcpy(lc->data, key.data, key.len);
 
+            /* 若生成成功，则把新的节点插入红黑树.
+             * 与速率控制模块(ngx_http_limit_req_handler)不同，内存申请失败后不会去尝试释放老内存块.
+             */
             ngx_rbtree_insert(ctx->rbtree, node);
 
         } else {
 
             lc = (ngx_http_limit_conn_node_t *) &node->color;
 
+            /* 找到对应的key节点，则判断当前连接数是否超过配置的最大连接数 */
             if ((ngx_uint_t) lc->conn >= limits[i].conn) {
 
                 ngx_shmtx_unlock(&shpool->mutex);
@@ -223,12 +236,12 @@ ngx_http_limit_conn_handler(ngx_http_request_t *r)
                 ngx_log_error(lccf->log_level, r->connection->log, 0,
                               "limiting connections by zone \"%V\"",
                               &limits[i].shm_zone->shm.name);
-
+                /* 若超过，则把已经匹配的limit的conn计数通过如下函数恢复，然后返回错误码 */
                 ngx_http_limit_conn_cleanup_all(r->pool);
                 return lccf->status_code;
             }
 
-            lc->conn++;
+            lc->conn++;  // 若没有超过，则当前连接数增1
         }
 
         ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -236,12 +249,16 @@ ngx_http_limit_conn_handler(ngx_http_request_t *r)
 
         ngx_shmtx_unlock(&shpool->mutex);
 
+        /* 生成一个ngx_pool_cleanup_t结构 */
         cln = ngx_pool_cleanup_add(r->pool,
                                    sizeof(ngx_http_limit_conn_cleanup_t));
         if (cln == NULL) {
             return NGX_HTTP_INTERNAL_SERVER_ERROR;
         }
 
+        /* 然后将其回调函数为ngx_http_limit_conn_cleanup.
+         * 目的:若limits数组中有一个元素要拒绝当前请求，则可通过回调恢复连接数
+         */
         cln->handler = ngx_http_limit_conn_cleanup;
         lccln = cln->data;
 
@@ -380,6 +397,7 @@ ngx_http_limit_conn_cleanup_all(ngx_pool_t *pool)
 }
 
 
+/* 将指定共享内存区域初始化为红黑树，用来存储连接信息 */
 static ngx_int_t
 ngx_http_limit_conn_init_zone(ngx_shm_zone_t *shm_zone, void *data)
 {
@@ -489,6 +507,7 @@ ngx_http_limit_conn_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 }
 
 
+/* 解析指令limit_conn_zone */
 static char *
 ngx_http_limit_conn_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -568,6 +587,7 @@ ngx_http_limit_conn_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
 
+    /* 参数解析完成后，会生成系统申请的共享内存，并调用对应的初始化函数进行初始化 */
     shm_zone = ngx_shared_memory_add(cf, &name, size,
                                      &ngx_http_limit_conn_module);
     if (shm_zone == NULL) {
@@ -590,6 +610,9 @@ ngx_http_limit_conn_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 }
 
 
+/* 解析指令limit_conn
+ * 主要工作是解析并发数量参数，然后生成一个ngx_http_limit_conn_limit_t结构
+ */
 static char *
 ngx_http_limit_conn(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
@@ -644,7 +667,7 @@ ngx_http_limit_conn(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
 
-    limit->conn = n;
+    limit->conn = n;        /* 并发数量参数值存放到结构的conn成员中 */
     limit->shm_zone = shm_zone;
 
     return NGX_CONF_OK;

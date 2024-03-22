@@ -179,8 +179,12 @@ typedef struct {
 
 
 typedef struct {
+    /* 所有解析过的HTTP头部都在headers链表中 */
     ngx_list_t                        headers;
 
+    /* 以下每个ngx_table_elt_t 成员都是RFC2616规范中定义的HTTP头部，它们实际都指向headers链表中的相应成员
+     * 注意，当它们为NULL空指针时，表示没有解析到相应的HTTP头部
+     */
     ngx_table_elt_t                  *host;
     ngx_table_elt_t                  *connection;
     ngx_table_elt_t                  *if_modified_since;
@@ -229,17 +233,24 @@ typedef struct {
     ngx_table_elt_t                  *date;
 #endif
 
+    /* user和passwd是只有 ngx_http_auth_basic_module 才会用到的成员 */
     ngx_str_t                         user;
     ngx_str_t                         passwd;
 
     ngx_array_t                       cookies;
 
+    /* server名称 */
     ngx_str_t                         server;
+    /* 根据 ngx_table_elt_t *content_length 计算出的HTTP包体大小 */
     off_t                             content_length_n;
     time_t                            keep_alive_n;
 
+    /* HTTP连接类型，它的取值范围是0、NGX_HTTP_CONNECTION_CLOSE 或 NGX_HTTP_CONNECTION_KEEP_ALIVE */
     unsigned                          connection_type:2;
     unsigned                          chunked:1;
+    /* 以下7个标志位是HTTP框架根据浏览器传来的"useragent"头部，它们可用来判断浏览器的类型.
+     * 值为1时表示是相应的浏览器发来的请求，值为0时则相反
+     */
     unsigned                          msie:1;
     unsigned                          msie6:1;
     unsigned                          opera:1;
@@ -251,12 +262,18 @@ typedef struct {
 
 
 typedef struct {
+    /* 待发送的HTTP头部链表, 与headers_in中的headers成员类似 */
     ngx_list_t                        headers;
     ngx_list_t                        trailers;
 
+    /* 响应中的状态码，如200表示成功. */
     ngx_uint_t                        status;
+    /* 响应中的状态行，如 "HTTP/1.1 201 CREATED" */
     ngx_str_t                         status_line;
 
+    /* 以下成员(包括ngx_table_elt_t)都是RFC2616规范中定义的HTTP头部，设置后,
+     * ngx_http_header_filter_module 过滤模块可以把它们加到待发送的网络包中
+     */
     ngx_table_elt_t                  *server;
     ngx_table_elt_t                  *date;
     ngx_table_elt_t                  *content_length;
@@ -272,6 +289,9 @@ typedef struct {
 
     ngx_str_t                        *override_charset;
 
+    /* 可以调用 ngx_http_set_content_type(r) 方法帮助设置Content-Type头部, 该方法会
+     * 根据URI中的文件扩展名并对应着mime.type来设置Content-Type值
+     */
     size_t                            content_type_len;
     ngx_str_t                         content_type;
     ngx_str_t                         charset;
@@ -280,6 +300,7 @@ typedef struct {
 
     ngx_array_t                       cache_control;
 
+    /* 在这里指定过 conent_length_n 后，不用再次到 ngx_table_elt_t *content_length 中设置响应长度 */
     off_t                             content_length_n;
     off_t                             content_offset;
     time_t                            date_time;
@@ -362,6 +383,10 @@ struct ngx_http_posted_request_s {
 };
 
 
+/**
+ * 返回值: ngx_int_t类型, 既可以是HTTP中响应包的返回码，如NGX_HTTP_OK等宏,
+ * 也可以返回Nginx全局定义的7个错误码: NGX_OK, NGX_ERROR, ...
+ */
 typedef ngx_int_t (*ngx_http_handler_pt)(ngx_http_request_t *r);
 typedef void (*ngx_http_event_handler_pt)(ngx_http_request_t *r);
 
@@ -388,10 +413,13 @@ struct ngx_http_request_s {
                                          /* of ngx_http_upstream_state_t */
 
     ngx_pool_t                       *pool;
-    ngx_buf_t                        *header_in;
+    ngx_buf_t                        *header_in;        /* Nginx收到的未经过解析的HTTP头部 */
 
-    ngx_http_headers_in_t             headers_in;
-    ngx_http_headers_out_t            headers_out;
+    /* 对于常见的HTTP头部，直接获取headers_in中已经由HTTP框架解析过的成员即可，对于不常见的HTTP头部，
+     * 需要遍历headers_in.headers链表才能获得。
+     */
+    ngx_http_headers_in_t             headers_in;       /* 存储已经解析过的HTTP头部 */
+    ngx_http_headers_out_t            headers_out;      /* 设置响应中的HTTP头部 */
 
     ngx_http_request_body_t          *request_body;
 
@@ -399,17 +427,19 @@ struct ngx_http_request_s {
     time_t                            start_sec;
     ngx_msec_t                        start_msec;
 
+    /* nginx忽略大小写等情形后解析完用户请求后得到的方法类型，取值范围为 NGX_HTTP_UNKNOWN - NGX_HTTP_TRACE */
     ngx_uint_t                        method;
-    ngx_uint_t                        http_version;
+    ngx_uint_t                        http_version;     /* Nginx解析过的协议版本, 取值为: NGX_HTTP_VERSION_XXX */
 
     ngx_str_t                         request_line;
-    ngx_str_t                         uri;
-    ngx_str_t                         args;
-    ngx_str_t                         exten;
-    ngx_str_t                         unparsed_uri;
+    ngx_str_t                         uri;              /* 指向用户请求中的URI */
+    ngx_str_t                         args;             /* 指向用户请求中的URL参数 */
+    ngx_str_t                         exten;            /* 指向用户请求的文件扩展名 */
+    ngx_str_t                         unparsed_uri;     /* 没有进行URL解码的原始请求 */
 
+    /* 用户请求中的方法名字符串 */
     ngx_str_t                         method_name;
-    ngx_str_t                         http_protocol;
+    ngx_str_t                         http_protocol;    /* .data: 指向用户请求中HTTP协议版本字符串的起始地址, .len: 长度 */
 
     ngx_chain_t                      *out;
     ngx_http_request_t               *main;
@@ -537,6 +567,8 @@ struct ngx_http_request_s {
     unsigned                          main_filter_need_in_memory:1;
     unsigned                          filter_need_in_memory:1;
     unsigned                          filter_need_temporary:1;
+
+    /* 发送前设置allow_ranges为1, 即可支持range协议(多线程下载和断点续传) */
     unsigned                          allow_ranges:1;
     unsigned                          subrequest_ranges:1;
     unsigned                          single_range:1;
@@ -567,12 +599,12 @@ struct ngx_http_request_s {
      */
 
     u_char                           *uri_start;
-    u_char                           *uri_end;
+    u_char                           *uri_end;          /* 指向URI结束后的下一个地址，即最后一个字符的下一个字符地址 */
     u_char                           *uri_ext;
-    u_char                           *args_start;
-    u_char                           *request_start;
+    u_char                           *args_start;       /* 指向URL参数的起始地址，配合uri_end也可获得URL参数 */
+    u_char                           *request_start;    /* 指向用户请求的首地址，同时也是方法名的地址 */
     u_char                           *request_end;
-    u_char                           *method_end;
+    u_char                           *method_end;       /* 指向方法名的最后一个字符 */
     u_char                           *schema_start;
     u_char                           *schema_end;
     u_char                           *host_start;

@@ -222,32 +222,40 @@
  * exit_thread, exit_process, exit_master.
  */
 struct ngx_module_s {
+    /* 对于一类模块（由type成员决定类型）而言，ctx_index表示当前模块在这类模块中的序号 */
     ngx_uint_t            ctx_index;
-    ngx_uint_t            index;
+    ngx_uint_t            index;  /* 当前模块在所有模块中的序号，也即在ngx_modules数组中的序号 */
 
     char                 *name;
 
     ngx_uint_t            spare0;
     ngx_uint_t            spare1;
 
-    ngx_uint_t            version;
+    ngx_uint_t            version;  /* 模块的版本，便于将来的扩展 */
     const char           *signature;
 
-    void                 *ctx;          /* 可以指向任意数据，为模块提供了很大的灵活性。ctx一般用于在不同类型模块中一种类型模块所具备的通用性接口 */
+    /* 指向一类模块的上下文结构体. 不同类模块的功能差异大，ctx会指向特定类型模块的公共接口 */
+    void                 *ctx;
+    /* 处理nginx.conf中的配置项 */
     ngx_command_t        *commands;
-    ngx_uint_t            type;         /* 指明了Nginx允许在设计模块时定义模块类型这个概念 */
+    /* 模块类型，与ctx成员紧密相连.官方取值有如下五种值:NGX_HTTP|CORE|CONF|EVENT|MALL_MODULE，也可自定义其他类型 */
+    ngx_uint_t            type;
 
-    ngx_int_t           (*init_master)(ngx_log_t *log);
+    /* Nginx启停过程中，以下7个函数指针表示有7个执行点会分别调用这7种方法.
+     * 对于任一方法而言，若不需要Nginx在某个时刻执行它，那么就简单把它设置为NULL空指针即可.
+     */
+    ngx_int_t           (*init_master)(ngx_log_t *log);  /* 目前为止，框架代码未使用它 */
 
-    ngx_int_t           (*init_module)(ngx_cycle_t *cycle);
+    ngx_int_t           (*init_module)(ngx_cycle_t *cycle); /* 初始化所有模块时调用. 在master/worker模式下，在启动worker进程前完成 */
 
-    ngx_int_t           (*init_process)(ngx_cycle_t *cycle);
-    ngx_int_t           (*init_thread)(ngx_cycle_t *cycle);
+    ngx_int_t           (*init_process)(ngx_cycle_t *cycle); /* 正常服务前被调用. 每个worker进程初始化过程会调用所有模块的init_process函数 */
+    ngx_int_t           (*init_thread)(ngx_cycle_t *cycle); /* Nginx暂时不支持多线程模式，因此init_thread暂未被调用. */
     void                (*exit_thread)(ngx_cycle_t *cycle);
-    void                (*exit_process)(ngx_cycle_t *cycle);
+    void                (*exit_process)(ngx_cycle_t *cycle); /* worker进程退出前调用它 */
 
-    void                (*exit_master)(ngx_cycle_t *cycle);
+    void                (*exit_master)(ngx_cycle_t *cycle); /* master进程退出前调用它 */
 
+    /* 保留字段，暂时未使用 */
     uintptr_t             spare_hook0;
     uintptr_t             spare_hook1;
     uintptr_t             spare_hook2;

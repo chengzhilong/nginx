@@ -342,7 +342,9 @@ typedef struct {
 
 #define NGX_MAIL_MODULE         0x4C49414D     /* "MAIL" */
 
+/* 配置项可以出现在mail{}块或imap{}块内 */
 #define NGX_MAIL_MAIN_CONF      0x02000000
+/* 配置项可以出现在server{}块内，然而该server{}块必须属于mail{}块或imap{}块 */
 #define NGX_MAIL_SRV_CONF       0x04000000
 
 

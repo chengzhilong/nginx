@@ -46,7 +46,7 @@ struct ngx_buf_s {
     unsigned         mmap:1;		/* 为1时表示该buf所包含内容在内存中，是通过mmap从文件映射到内存中，这些内容不能被进行处理的filter进行变更 */
 
     unsigned         recycled:1;		/* 可以回收的。也就是这个buf是可以被释放的，通常配合shadow字段一起使用 */
-    unsigned         in_file:1;			/* 为1时表面该buf所包含的内容是在文件中 */
+    unsigned         in_file:1;			/* 为1时表明该buf所包含的内容是在文件中 */
     unsigned         flush:1;			/* 遇到有flush字段被设置为1的buf的chain，则该chain的数据即便不是最后结束的数据，也会进行输出，不会受postpone_output配置限制，但会收到发送速率等其他条件限制 */
     unsigned         sync:1;
     unsigned         last_buf:1;		/* 数据被以多个chain传递给了过滤器，此字段为1表明这是最后一个buf */

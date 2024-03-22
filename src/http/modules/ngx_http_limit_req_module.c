@@ -49,7 +49,7 @@ typedef struct {
 
 
 typedef struct {
-    ngx_array_t                  limits;
+    ngx_array_t                  limits;    /* limits数组每个元素对应location中的一条limit_req指令 */
     ngx_uint_t                   limit_log_level;
     ngx_uint_t                   delay_log_level;
     ngx_uint_t                   status_code;
@@ -251,7 +251,7 @@ ngx_http_limit_req_handler(ngx_http_request_t *r)
             ctx->node = NULL;
         }
 
-        return lrcf->status_code;
+        return lrcf->status_code;  /* 若错误码是NGX_BUSY, NGX_ERROR, 则返回配置的状态码 */
     }
 
     /* rc == NGX_AGAIN || rc == NGX_OK */
@@ -260,7 +260,7 @@ ngx_http_limit_req_handler(ngx_http_request_t *r)
         excess = 0;
     }
 
-    delay = ngx_http_limit_req_account(limits, n, &excess, &limit);
+    delay = ngx_http_limit_req_account(limits, n, &excess, &limit);  /* 从配置获取最大延迟时间delay */
 
     if (!delay) {
         return NGX_DECLINED;
@@ -278,12 +278,15 @@ ngx_http_limit_req_handler(ngx_http_request_t *r)
     r->write_event_handler = ngx_http_limit_req_delay;
 
     r->connection->write->delayed = 1;
-    ngx_add_timer(r->connection->write, delay);
+    ngx_add_timer(r->connection->write, delay);  /* 加定时器，设置回调ngx_http_limit_req_delay */
 
     return NGX_AGAIN;
 }
 
 
+/* 针对请求的延时处理函数: delay时间到期，该函数得到运行时，
+ * 会再次运行ngx_http_core_run_phases，执行HTTP的11个阶段(参考类型ngx_http_phases)
+ */
 static void
 ngx_http_limit_req_delay(ngx_http_request_t *r)
 {
@@ -356,6 +359,12 @@ ngx_http_limit_req_rbtree_insert_value(ngx_rbtree_node_t *temp,
 }
 
 
+/**
+ * 查找对应当前的http_request的匹配结果.
+ * NGX_BUSY: 严重超配, 已经超出burst阈值，需要返回错误码;
+ * NGX_OK: 本规则超配, 需要延迟处理
+ * NGX_AGAIN: 本规则没有超配，要检测下一个规则
+ */
 static ngx_int_t
 ngx_http_limit_req_lookup(ngx_http_limit_req_limit_t *limit, ngx_uint_t hash,
     ngx_str_t *key, ngx_uint_t *ep, ngx_uint_t account)
@@ -407,16 +416,19 @@ ngx_http_limit_req_lookup(ngx_http_limit_req_limit_t *limit, ngx_uint_t hash,
 
             *ep = excess;
 
+            /* 若没有处理到的请求大于配置的burst数量，表示不能处理当前请求，返回NGX_BUSY */
             if ((ngx_uint_t) excess > limit->burst) {
                 return NGX_BUSY;
             }
 
+            /* 反之，若系统可以处理当前请求，且查询的是location最后一个limit_req定义的规则，则返回NGX_OK */
             if (account) {
                 lr->excess = excess;
                 lr->last = now;
                 return NGX_OK;
             }
 
+            /* 如果不是最后一个规则，则返回NGX_AGAIN继续查找下一个limit_req规则 */
             lr->count++;
 
             ctx->node = lr;
@@ -427,18 +439,20 @@ ngx_http_limit_req_lookup(ngx_http_limit_req_limit_t *limit, ngx_uint_t hash,
         node = (rc < 0) ? node->left : node->right;
     }
 
+    /* 如果key值对应的节点在当前的红黑树中不存在，则生成一个key值节点插入到红黑树中 */
     *ep = 0;
 
     size = offsetof(ngx_rbtree_node_t, color)
            + offsetof(ngx_http_limit_req_node_t, data)
            + key->len;
 
+    /* 回收红黑树中1到2个已经超过60s没有被引用，也没有限速的节点 */
     ngx_http_limit_req_expire(ctx, 1);
 
     node = ngx_slab_alloc_locked(ctx->shpool, size);
 
     if (node == NULL) {
-        ngx_http_limit_req_expire(ctx, 0);
+        ngx_http_limit_req_expire(ctx, 0); /* 申请失败，也会调用函数尽快释放没有被引用的老的内存块 */
 
         node = ngx_slab_alloc_locked(ctx->shpool, size);
         if (node == NULL) {
@@ -496,6 +510,7 @@ ngx_http_limit_req_account(ngx_http_limit_req_limit_t *limits, ngx_uint_t n,
         max_delay = excess * 1000 / ctx->rate;
     }
 
+    /* 遍历limits数组的所有元素，利用漏桶算法计算每一个命中的limit元素中最大的delay数量，然后返回delay最大值 */
     while (n--) {
         ctx = limits[n].shm_zone->data;
         lr = ctx->node;
@@ -529,7 +544,7 @@ ngx_http_limit_req_account(ngx_http_limit_req_limit_t *limits, ngx_uint_t n,
 
         delay = excess * 1000 / ctx->rate;
 
-        if (delay > max_delay) {
+        if (delay > max_delay) {  /* 计算配置的最大延迟时间 */
             max_delay = delay;
             *ep = excess;
             *limit = &limits[n];

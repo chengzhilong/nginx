@@ -16,12 +16,12 @@
 struct ngx_file_s {
     ngx_fd_t                   fd;
     ngx_str_t                  name;
-    ngx_file_info_t            info;
+    ngx_file_info_t            info;        /* 文件大小等资源信息，实际上就是Linux定义的stat结构 */
 
     off_t                      offset;
-    off_t                      sys_offset;
+    off_t                      sys_offset;  /* 当前文件系统偏移量 */
 
-    ngx_log_t                 *log;
+    ngx_log_t                 *log;         /* 日志对象，相关的日志输出到log指定的日志文件中 */
 
 #if (NGX_THREADS || NGX_COMPAT)
     ngx_int_t                (*thread_handler)(ngx_thread_task_t *task,
@@ -35,7 +35,7 @@ struct ngx_file_s {
 #endif
 
     unsigned                   valid_info:1;
-    unsigned                   directio:1;
+    unsigned                   directio:1;  /* 与配置文件中的directio配置项相对应，在发送大文件时可设为1 */
 };
 
 

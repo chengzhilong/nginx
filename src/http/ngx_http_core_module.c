@@ -1953,6 +1953,9 @@ ngx_http_send_response(ngx_http_request_t *r, ngx_uint_t status,
 }
 
 
+/* 发送HTTP头部. 只要指定ngx_http_request_t::headers_out成员，就可在该函数内
+ * 正确地把HTTP头部发出.
+ */
 ngx_int_t
 ngx_http_send_header(ngx_http_request_t *r)
 {
@@ -1975,6 +1978,11 @@ ngx_http_send_header(ngx_http_request_t *r)
 }
 
 
+/* 发送HTTP响应包体.
+ * 注意，调用ngx_http_output_filter发送包体之前，不能在进程的栈里分配内存并将其作为包体发送。
+ * 必须牢记Nginx是全异步的服务器. ngx_http_output_filter 返回时，可能由于TCP连接上的缓冲区还
+ * 不可写，所以导致 ngx_buf_t 缓冲区执行的内存还没有被发送.
+ */
 ngx_int_t
 ngx_http_output_filter(ngx_http_request_t *r, ngx_chain_t *in)
 {

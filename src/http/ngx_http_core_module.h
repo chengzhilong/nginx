@@ -106,22 +106,58 @@ typedef struct {
 
 
 typedef enum {
+    /* read完请求的头部之后，在没有对头部做任何处理之前，想要获取一些原始的值，就应该在这个阶段进行处理.
+     * 这里面会涉及到一个realip模块.
+     */
     NGX_HTTP_POST_READ_PHASE = 0,			/* 读取请求内容阶段 */
 
+    /* 与REWRITE阶段一样，就只有一个模块叫rewrite模块. 一般没有第三方模块会处理这个阶段.
+     * 在还没有查询到URI匹配的location前，这时rewrite重写URL也作为一个独立的HTTP阶段.
+     */
     NGX_HTTP_SERVER_REWRITE_PHASE,			/* Server请求地址重写阶段 */
 
+    /* 做location的匹配，暂时没有模块会用到.
+     * 根据URI寻找匹配的location，这个阶段通常由ngx_http_core_module模块实现.
+     */
     NGX_HTTP_FIND_CONFIG_PHASE,				/* 配置查找阶段 */
+
+    /* 对URL做一些处理. 
+     * 在NGX_HTTP_FIND_CONFIG_PHASE阶段之后重写URL的意义与NGX_HTTP_SERVER_REWRITE_PHASE阶段显然是不同的，
+     * 因为这两者会导致查找到不同的location块(location是与URI进行匹配的)
+     */
     NGX_HTTP_REWRITE_PHASE,					/* Location请求地址重写阶段 */
+
+    /* 处于REWRITE之后，暂时没有模块会用到.
+     * 这一阶段是用于在rewrite重写URI后重新跳到 NGX_HTTP_FIND_CONFIG_PHASE, 找到与新的URI匹配的location.
+     * 无法由第三方HTTP模块处理，而仅由ngx_http_core_module模块使用
+     */
     NGX_HTTP_POST_REWRITE_PHASE,			/* 请求地址重写提交阶段 */
 
+    /* 接下来是确认用户访问权限的三个模块 */
+    /* 在ACCESS之前要做一些工作，例如并发连接和QPS需要进行限制，涉及到两个模块:
+     * limit_conn, limit_req
+     */
     NGX_HTTP_PREACCESS_PHASE,				/* 访问权限检查准备阶段 */
 
+    /* 核心要解决的是用户能不能访问的问题，例如auth_basic是用户名和密码, access是用户访问IP,
+     * auth_request根据第三方服务返回是否可以去访问.
+     */
     NGX_HTTP_ACCESS_PHASE,					/* 访问权限检查阶段 */
+
+    /* 在ACCESS之后要做一些工作，暂时没有模块用到 */
     NGX_HTTP_POST_ACCESS_PHASE,				/* 访问权限检查提交阶段 */
 
+    /* 处理CONTENT之前做一些事情，例如把子请求发送给第三方的服务区处理. try_files模块用到
+     * 该阶段完全是为了 try_files 配置项而设立的. 当HTTP请求访问静态文件资源时, try_files
+     * 配置项可以使这个请求顺序地访问多个静态文件资源. 如果某一次访问失败, 则继续访问
+     * try_files 中指定的下一个静态资源
+     */
     NGX_HTTP_TRY_FILES_PHASE,				/* 配置项try_files处理阶段 */
+
+    /* 处理HTTP模块请求内容的阶段. 涉及到的模块很多，比如 index, autoindex, concat等都是在这个阶段生效的 */
     NGX_HTTP_CONTENT_PHASE,					/* 内容产生阶段 */
 
+    /* 记录日志access_log模块 */
     NGX_HTTP_LOG_PHASE						/* 日志模块处理阶段 */
 } ngx_http_phases;
 

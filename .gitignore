@@ -14,3 +14,4 @@
 *.txt
 *.iml
 src/cmake-build-debug
+src/build

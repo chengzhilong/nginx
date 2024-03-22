@@ -19,7 +19,9 @@
  *    TT        command type, i.e. HTTP "location" or "server" command
  */
 
+/* 配置项不携带任何参数 */
 #define NGX_CONF_NOARGS      0x00000001
+/* 配置项必须携带1个参数 */
 #define NGX_CONF_TAKE1       0x00000002
 #define NGX_CONF_TAKE2       0x00000004
 #define NGX_CONF_TAKE3       0x00000008
@@ -30,24 +32,38 @@
 
 #define NGX_CONF_MAX_ARGS    8
 
+/* 配置项可以携带1个参数或2个参数 */
 #define NGX_CONF_TAKE12      (NGX_CONF_TAKE1|NGX_CONF_TAKE2)
+/* 配置项可以携带1个参数或3个参数 */
 #define NGX_CONF_TAKE13      (NGX_CONF_TAKE1|NGX_CONF_TAKE3)
-
+/* 配置项可以携带2个参数或三个参数 */
 #define NGX_CONF_TAKE23      (NGX_CONF_TAKE2|NGX_CONF_TAKE3)
 
+/* 配置项可以携带1-3个参数 */
 #define NGX_CONF_TAKE123     (NGX_CONF_TAKE1|NGX_CONF_TAKE2|NGX_CONF_TAKE3)
+/* 配置项可以携带1-4个参数 */
 #define NGX_CONF_TAKE1234    (NGX_CONF_TAKE1|NGX_CONF_TAKE2|NGX_CONF_TAKE3   \
                               |NGX_CONF_TAKE4)
 
 #define NGX_CONF_ARGS_NUMBER 0x000000ff
+/* 配置项定义了一种新的{}块，例如, http、server、location等配置，它们的type都必须定义为NGX_CONF_BLOCK */
 #define NGX_CONF_BLOCK       0x00000100
+/* 配置项携带的参数只能是1个，并且参数的值只能是on或off */
 #define NGX_CONF_FLAG        0x00000200
+/* 不验证配置项携带的参数个数 */
 #define NGX_CONF_ANY         0x00000400
+/* 配置项携带的参数个数必须超过1个 */
 #define NGX_CONF_1MORE       0x00000800
+/* 配置项携带的参数个数必须超过2个 */
 #define NGX_CONF_2MORE       0x00001000
 
+/* 一般由NGX_CORE_MODULE类型的核心模块使用，仅与NGX_MAIN_CONF同时设置，表示模块
+ * 需要解析不属于任何{}内的全局配置项。它实际上会指定set方法里的第3个参数conf的
+ * 值，使之指向每个模块解析全局配置项的配置结构体。
+ */
 #define NGX_DIRECT_CONF      0x00010000
 
+/* 配置项可以出现在全局配置中，即不属于任何{}配置块 */
 #define NGX_MAIN_CONF        0x01000000
 #define NGX_ANY_CONF         0x1F000000
 
@@ -74,13 +90,25 @@
 #define NGX_MAX_CONF_ERRSTR  1024
 
 
-struct ngx_command_s {
-    ngx_str_t             name;							/* 配置指令的名称 */
-    ngx_uint_t            type;							/* 配置指令属性的集合 */
-    char               *(*set)(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);	/* nginx在解析配置时，  若遇到配置之类，会把读取到的值传递给这个函数进行分解处理 */
-    ngx_uint_t            conf;							/* 被NGX_HTTP_MODULE类型模块所用，指定当前配置项存储的内存位置，取值为NGX_HTTP_MAIN_CONF_OFFSET, NGX_HTTP_SRV_CONF_OFFSET, NGX_HTTP_LOC_CONF_OFFSET */
-    ngx_uint_t            offset;						/* 指定该配置项值的精确存放位置，一般指定为某一个结构体变量的字段偏移 */
-    void                 *post;							/* 该字段存储一个指针，可指向任何一个在读取配置过程中需要的数据，以便于进行配置读取的处理 */
+struct ngx_command_s {  /* 表示模块配置文件的参数 */
+    ngx_str_t             name;							/* 配置项名称 */
+
+    /* type决定配置项可以在哪个块(http, server, location, if, upstream等)中出现，以及可以携带的参数类型和个数等
+     * type类型通常有如下四类:
+     * 1) 处理配置项时获取当前配置块的方式: 如NGX_DIRECT_CONF
+     * 2) 配置项可以在哪些{}配置块中出现: 如NGX_MAIN_CONF, NGX_EVENT_CONF, NGX_HTTP_SRV_CONF等
+     * 3) 限制配置项的参数个数: 如NGX_CONF_NOARGS, NGX_CONF_TAKE1, NGX_CONF_TAKE12, NGX_CONF_TAKE123
+     * 4) 限制配置项后的参数出现的形式: 如NGX_CONF_BLOCK, NGX_CONF_FLAG, NGX_CONF_1MORE等
+     */
+    ngx_uint_t            type;							/* 配置项类型 */
+    /* 出现了name中指定的配置项后，将会调用set方法处理配置项的参数 */
+    char               *(*set)(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
+    /* 在配置文件中的偏移量 */
+    ngx_uint_t            conf;			/* 被NGX_HTTP_MODULE类型模块所用，指定当前配置项存储的内存位置，取值为NGX_HTTP_MAIN|SRV|LOC_CONF_OFFSET */
+    /* 通常用于使用预设的解析方法解析配置项，需要与conf配合使用 */
+    ngx_uint_t            offset;		/* 指定该配置项值的精确存放位置，一般指定为某一个结构体变量的字段偏移 */
+    /* 配置项读取后的处理方法，必须是ngx_conf_post_t结构指针 */
+    void                 *post;
 };
 
 #define ngx_null_command  { ngx_null_string, 0, NULL, 0, 0, NULL }

@@ -25,7 +25,7 @@ struct ngx_list_part_s {
 typedef struct {
     ngx_list_part_t  *last;			/* 指向该链表的最后一个节点 */
     ngx_list_part_t   part;			/* 该链表的首个存放具体元素的节点 */
-    size_t            size;			/* 链表中存放的具体元素所需内存大小 */
+    size_t            size;			/* 链表数组每一个元素最大内存大小，即最多可占字节数 */
     ngx_uint_t        nalloc;		/* 每个节点所含的固定大小的数组的容量 */
     ngx_pool_t       *pool;			/* 该list使用的分配内存的pool */
 } ngx_list_t;
